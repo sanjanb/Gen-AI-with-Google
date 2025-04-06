@@ -1,0 +1,379 @@
+# Detailed Overview of Large Language Models
+
+## Table of Contents
+
+1. [Introduction](#introduction)
+2. [Why Language Models Are Important](#why-language-models-are-important)
+3. [Large Language Models](#large-language-models)
+4. [Transformer](#transformer)
+   - [Input Preparation and Embedding](#input-preparation-and-embedding)
+   - [Multi-Head Attention](#multi-head-attention)
+   - [Layer Normalization and Residual Connections](#layer-normalization-and-residual-connections)
+   - [Feedforward Layer](#feedforward-layer)
+   - [Encoder and Decoder](#encoder-and-decoder)
+   - [Mixture of Experts (MoE)](#mixture-of-experts-moe)
+5. [Large Reasoning Models](#large-reasoning-models)
+6. [Training the Transformer](#training-the-transformer)
+   - [Data Preparation](#data-preparation)
+   - [Training and Loss Function](#training-and-loss-function)
+7. [The Evolution of Transformers](#the-evolution-of-transformers)
+   - [GPT-1](#gpt-1)
+   - [BERT](#bert)
+   - [GPT-2](#gpt-2)
+   - [GPT-3/3.5/4](#gpt-3354)
+   - [LaMDA](#lamda)
+   - [Gopher](#gopher)
+   - [GLaM](#glam)
+   - [Chinchilla](#chinchilla)
+   - [PaLM](#palm)
+   - [PaLM 2](#palm-2)
+   - [Gemini](#gemini)
+   - [Gemma](#gemma)
+   - [LLaMA](#llama)
+   - [Mixtral](#mixtral)
+   - [OpenAI O1](#openai-o1)
+   - [DeepSeek](#deepseek)
+   - [Other Open Models](#other-open-models)
+   - [Comparison](#comparison)
+8. [Fine-Tuning Large Language Models](#fine-tuning-large-language-models)
+   - [Supervised Fine-Tuning](#supervised-fine-tuning)
+   - [Reinforcement Learning from Human Feedback](#reinforcement-learning-from-human-feedback)
+   - [Parameter Efficient Fine-Tuning](#parameter-efficient-fine-tuning)
+9. [Using Large Language Models](#using-large-language-models)
+   - [Prompt Engineering](#prompt-engineering)
+   - [Sampling Techniques and Parameters](#sampling-techniques-and-parameters)
+   - [Task-Based Evaluation](#task-based-evaluation)
+10. [Accelerating Inference](#accelerating-inference)
+    - [Trade-Offs](#trade-offs)
+    - [Output-Approximating Methods](#output-approximating-methods)
+    - [Output-Preserving Methods](#output-preserving-methods)
+    - [Batching and Parallelization](#batching-and-parallelization)
+11. [Applications](#applications)
+    - [Code and Mathematics](#code-and-mathematics)
+    - [Machine Translation](#machine-translation)
+    - [Text Summarization](#text-summarization)
+    - [Question-Answering](#question-answering)
+    - [Chatbots](#chatbots)
+    - [Content Generation](#content-generation)
+    - [Natural Language Inference](#natural-language-inference)
+    - [Text Classification](#text-classification)
+    - [Text Analysis](#text-analysis)
+    - [Multimodal Applications](#multimodal-applications)
+12. [Summary](#summary)
+
+## Introduction
+
+The advent of **Large Language Models (LLMs)** represents a seismic shift in the world of artificial intelligence. Their ability to process, generate, and understand user intent is fundamentally changing how we interact with information and technology. An LLM is an advanced artificial intelligence system that specializes in processing, understanding, and generating human-like text. These systems are typically implemented as a deep neural network and are trained on massive amounts of text data. This training allows them to learn intricate language patterns, enabling them to perform tasks like machine translation, creative text generation, question answering, text summarization, and many other reasoning and language-oriented tasks. This whitepaper explores the timeline of architectures and approaches leading to large language models and the architectures used at the time of publication. It also discusses fine-tuning techniques for customization, methods for training efficiency, and ways to accelerate inference, followed by various applications and code examples. The authors believe that these new technologies have the potential to assist, complement, empower, and inspire people at any time across almost any field. The big question is how these large language models work. The whitepaper will explore the core building blocks of LLMs, focusing on transformer architectures and their evolution, training and fine-tuning techniques, and methods to improve the speed of response generation. It concludes with examples of how language models are used in practice.
+
+## Why Language Models Are Important
+
+**LLMs achieve an impressive performance boost from previous state-of-the-art NLP models across various complex tasks requiring answering questions or complex reasoning, making many new applications feasible**. These applications include language translation, code generation and completion, text generation, text classification, and question-answering. Although foundational LLMs trained on large amounts of data perform well out of the box and display emergent behaviors (like the ability to perform tasks they weren't directly trained for), they can also be adapted for specific tasks through **fine-tuning**. Fine-tuning requires significantly less data and computational resources than training an LLM from scratch. Furthermore, LLMs can be guided towards desired behavior through **prompt engineering**: the art and science of composing prompts and parameters to get the desired response.
+
+## Large Language Models
+
+A **language model predicts the probability of a sequence of words**. Commonly, given a text prefix, a language model assigns probabilities to subsequent words. For example, for the prefix "The most famous city in the US is...", a language model might predict high probabilities for "New York" and "Los Angeles" and low probabilities for "laptop" or "apple". While basic language models can be created by storing n-gram tables, modern language models are often based on neural models, such as **transformers**.
+
+## Transformer
+
+The transformer architecture was developed at Google in 2017 for use in a translation model. It is a **sequence-to-sequence model** capable of converting sequences from one domain to another, such as translating French to English. The original transformer architecture has two main parts: an **encoder** and a **decoder**. The encoder converts the input text into a representation, which is then passed to the decoder. The decoder then generates the output text autoregressively. Notably, the output size of the encoder is linear in the size of its input. Figure 1 shows the original transformer architecture. The transformer consists of multiple layers, where a layer comprises a set of parameters that perform a specific transformation. These layers can be subdivided into input, hidden, and output layers. The **input layer** (e.g., Input/Output Embedding) is where raw data enters the network. **Input embeddings** represent the input tokens, and **output embeddings** represent the predicted output tokens. The **output layer** (e.g., Softmax) is the final layer producing the network's output. The **hidden layers** (e.g., Multi-Head Attention) are between the input and output layers.
+
+### Input Preparation and Embedding
+
+To prepare language inputs, an input sequence is converted into **tokens** and then into **input embeddings**. An input embedding is a high-dimensional vector that represents the meaning of each token. Generating an input embedding involves normalization (optional), tokenization (breaking into words/subwords and mapping to integer IDs from a vocabulary), embedding (converting token IDs to high-dimensional vectors using a lookup table learned during training), and positional encoding (adding information about the token's position).
+
+### Multi-Head Attention
+
+After embedding, these vectors are fed into the multi-head attention module. **Self-attention** is a crucial mechanism that allows the model to focus on relevant parts of the input sequence and capture long-range dependencies more effectively than RNNs.
+
+#### Understanding Self-Attention
+
+Self-attention determines relationships between words and phrases. For example, in "The tiger jumped out... because it was thirsty," "the tiger" and "it" are related. This is achieved by:
+
+1. **Creating queries, keys, and values**: Each input embedding is multiplied by learned weight matrices (Wq, Wk, Wv) to generate query (Q), key (K), and value (V) vectors. Query helps the model ask what's relevant, key helps identify relevance, and value holds the word content.
+2. **Calculating scores**: Scores are calculated by taking the dot product of a query vector with all key vectors to determine how much each word should attend to others.
+3. **Normalization**: Scores are divided by the square root of the key vector dimension (dk) for stability and then passed through a softmax function to get attention weights, indicating connection strength.
+4. **Weighted values**: Each value vector is multiplied by its attention weight, and the results are summed to produce a context-aware representation for each word.
+
+These computations are performed in parallel using Q, K, and V matrices. Figure 2 illustrates self-attention, and Figure 3 shows the basic attention operation.
+
+#### Multi-Head Attention: Power in Diversity
+
+Multi-head attention uses multiple sets of Q, K, V weight matrices running in parallel, each "head" focusing on different input relationship aspects. Their outputs are concatenated and linearly transformed, giving a richer input representation. This improves the model's ability to handle complex language patterns and long-range dependencies, crucial for tasks like machine translation, summarization, and question-answering. It allows considering multiple interpretations of the input.
+
+### Layer Normalization and Residual Connections
+
+Each transformer layer (multi-head attention and feedforward) uses **layer normalization** and **residual connections** (Add & Norm layer in Figure 1). Layer normalization normalizes activations within a layer, reducing covariate shift and improving gradient flow for faster training and better performance. **Residual connections** propagate inputs to the output of layers, making optimization easier and helping with vanishing and exploding gradients. The Add and Norm layer is applied after both the multi-head attention and the feedforward layer.
+
+### Feedforward Layer
+
+The output of the multi-head attention module and the subsequent Add & Norm layer is fed into the **feedforward layer** of each transformer block. This layer applies a position-wise transformation independently for each sequence position, adding non-linearity and complexity. It typically consists of two linear transformations with a non-linear activation function (like ReLU or GELU) in between, adding further representational power. Another Add & Norm step follows, contributing to the stability of deep transformers.
+
+### Encoder and Decoder
+
+The original transformer architecture combines **encoder** and **decoder** modules, each with a series of layers comprising multi-head self-attention, a position-wise feedforward network, normalization layers, and residual connections.
+
+- **Encoder**: The encoder processes the input sequence into a continuous representation with contextual information for each token. The input is normalized, tokenized, and embedded, with positional encodings added. Self-attention allows each token to attend to any other, understanding contextual relationships. The encoder's output is a series of embedding vectors Z representing the entire input sequence.
+- **Decoder**: The decoder generates an output sequence based on the encoder's output Z, token by token, starting with a start-of-sequence token. It uses **masked self-attention** (each position attends only to earlier positions, preserving autoregression) and **encoder-decoder cross-attention** (decoder focuses on relevant input parts using encoder embeddings). This iterative process continues until an end-of-sequence token is predicted.
+- **Decoder-Only**: The majority of recent LLMs use a **decoder-only** transformer architecture, which directly generates the output sequence from the input, simplifying the architecture for tasks where encoding and decoding can be merged. The input undergoes embedding and positional encoding, and the decoder uses masked self-attention to predict subsequent tokens based on previous ones.
+
+### Mixture of Experts (MoE)
+
+A **Mixture of Experts (MoE)** architecture combines multiple specialized sub-models ("experts") to improve performance on complex tasks. It's a form of ensemble learning that learns to route different input parts to different experts, allowing specialization.
+
+- **Experts**: Individual sub-models designed for specific data subsets or tasks, often themselves transformer-based in LLMs.
+- **Gating Network (Router)**: Learns to route the input to appropriate experts by producing a probability distribution over them, determining each expert's contribution. This is also typically a neural network.
+- **Combination Mechanism**: Combines the weighted outputs of the experts (often a weighted average) to produce the final prediction.
+
+An MoE uses a gating network to intelligently route different input parts to the most relevant experts, improving overall performance and potentially reducing computational cost through "sparse activation" by only activating a subset of experts. Figure 4 illustrates MoE ensembling.
+
+## Large Reasoning Models
+
+Achieving robust reasoning in Large Models involves a combination of architectural designs, training methodologies, and prompting strategies. Incorporating inductive biases favoring reasoning is crucial. Transformer architectures with self-attention are foundational but not sufficient alone for complex reasoning. **Chain-of-Thought prompting** encourages the model to generate intermediate reasoning steps before the final answer, improving performance on multi-step inference by mimicking human reasoning. **Tree-of-Thoughts** explores multiple reasoning paths using a search algorithm, useful for game trees or combinatorial problems. **Least-to-Most prompting** guides the model to solve progressively complex subproblems, using the output of one as part of the prompt for the next. **Fine-tuning on datasets specifically designed for reasoning tasks** (logical puzzles, math problems, commonsense reasoning) is also crucial. **Instruction tuning** (training to follow natural language instructions) further enhances reasoning abilities. **Reinforcement Learning from Human Feedback (RLHF)** refines outputs based on human preferences, improving reasoning quality and coherence, and helps in reward models that score reasoning ability and helpfulness. **Knowledge distillation** transfers reasoning patterns from a larger "teacher" to a smaller "student" model for efficiency. During inference, techniques like **beam search** (exploring multiple output candidates) can improve reasoning quality. **Temperature scaling** (adjusting output randomness) can influence the exploration-exploitation trade-off. Incorporating **external knowledge sources** (knowledge graphs, databases) through techniques like **retrieval-augmented generation** can provide additional reasoning support. The combination of these techniques across many reasoning domains creates the best-performing reasoning large language models.
+
+## Training the Transformer
+
+A typical transformer training loop involves sampling batches of input sequences and corresponding target sequences from a training dataset. In unsupervised pre-training, the target is derived from the input itself. The input batch is fed into the transformer, which generates predicted output sequences. The difference between predicted and target sequences is measured using a **loss function** (often cross-entropy loss). Gradients of this loss are calculated, and an **optimizer** uses them to update the transformer's parameters. This process repeats until the transformer converges or is trained on a pre-specified number of tokens.
+
+### Data Preparation
+
+The first step is **data preparation**, which includes cleaning the data (filtering, deduplication, normalization). Next is **tokenization**, where the dataset is converted into tokens using techniques like Byte-Pair Encoding and Unigram tokenization. Tokenization generates a **vocabulary**, a set of unique tokens used by the LLM as its "language". Finally, the data is split into a **training dataset** and a **test dataset** for evaluating performance.
+
+### Training and Loss Function
+
+Different approaches formulate the training task depending on the architecture.
+
+- **Decoder-Only Models**: Typically pre-trained on **language modeling**, where the target sequence is a shifted version of the input sequence (e.g., input "the cat sat on" predicts "the", then input "the cat sat on the" predicts "mat").
+- **Encoder-Only Models** (like BERT): Often pre-trained by **corrupting the input** (e.g., Masked Language Modeling where "[MASK]" is replaced with the original word) and having the model reconstruct it. Another objective for BERT is **next sentence prediction**.
+- **Encoder-Decoder Models** (like the original transformer): Trained on **sequence-to-sequence supervised tasks** such as translation, question-answering, and summarization. They can also be trained unsupervised by converting other tasks into sequence-to-sequence format (e.g., predicting the rest of a Wikipedia article given the first part).
+- **Context Length**: The number of previous tokens the model can "remember" and use for prediction. Longer context allows capturing more complex relationships but requires more computational resources. Choosing an appropriate context length balances task needs and available resources.
+
+## The Evolution of Transformers
+
+This section provides an overview of encoder-only, encoder-decoder, and decoder-only transformer architectures, starting with GPT-1 and BERT and ending with Google's Gemini family. Table 1 shows the evolution of important hyperparameters over time. The scaling of data and parameters has improved performance and resulted in emergent behaviors and zero/few-shot generalization. However, even the best LLMs have limitations, such as human-like conversation, math skills, and alignment with human ethics.
+
+### GPT-1
+
+GPT-1 (Generative Pre-trained Transformer version 1), developed by OpenAI in 2018, was a **decoder-only model** trained on the BooksCorpus dataset. Its main innovations were **combining transformers and unsupervised pre-training** on a large unlabeled corpus (BooksCorpus) and **task-aware input transformations** to handle different tasks like textual entailment and question-answering without task-specific architectures. Unsupervised pre-training addresses the limitations of supervised learning by using easily collected unlabeled data and allowing generalization to different tasks. GPT-1 surpassed previous models on several benchmarks. Limitations included generating repetitive text, failing to reason over multiple dialogue turns, not tracking long-term dependencies, and limited cohesion in longer texts. Despite this, it demonstrated the power of unsupervised pre-training.
+
+### BERT
+
+BERT (Bidirectional Encoder Representations from Transformers) is an **encoder-only architecture**, unlike traditional encoder-decoder models. It focuses on deep context understanding by training on a **masked language model objective** (predicting masked words) and a **next sentence prediction loss**. By training on these, BERT captures intricate context dependencies from both sides of a word and understands relationships between sentence pairs. This makes BERT good for natural language understanding tasks like question-answering, sentiment analysis, and natural language inference, but it cannot generate text.
+
+### GPT-2
+
+GPT-2, released by OpenAI in 2019, was the successor to GPT-1. Its main innovation was a **direct scale-up**, with a tenfold increase in parameters (1.5 billion) and training dataset size (40GB WebText from Reddit). More parameters increased the model's learning capacity. This scaling resulted in more coherent and realistic text generation, capturing long-range dependencies and common-sense reasoning better than GPT-1. While it didn't outperform state-of-the-art in reading comprehension, summarization, and translation, its significant achievement was **zero-shot learning** on various tasks (generalizing to new tasks without specific training) like machine translation and text summarization. Performance on zero-shot tasks increased log-linearly with model capacity.
+
+### GPT-3/3.5/4
+
+GPT-3 represents a significant evolution in scale (175 billion parameters) and capabilities, understanding nuanced instructions and generating more coherent text over longer passages. Unlike GPT-2's need for fine-tuning, GPT-3 can perform tasks with just a few examples or even without any, based on the instruction alone. Its large scale and diverse training corpus led to better generalization across a broader range of tasks. **InstructGPT** was a version of GPT-3 fine-tuned with human demonstrations using Supervised Fine-Tuning and Reinforcement Learning from Human Feedback, leading to improved instruction following, truthfulness, and reduced toxicity. A smaller InstructGPT model outperformed the larger GPT-3 on human evaluations. **GPT-3.5** models, including GPT-3.5 Turbo, improved over GPT-3 by understanding and generating code, being optimized for dialogue, and having larger context windows. **GPT-4** extends GPT-3.5 as a large multimodal model processing image and text inputs and producing text outputs, with broader knowledge and advanced reasoning, larger context windows, and remarkable versatility across diverse fields without specialized instructions, often matching or exceeding human capabilities.
+
+### LaMDA
+
+Google's LaMDA (Language Model for Dialogue Applications) is designed primarily for **open-ended conversations**, handling a wide array of topics with more natural and flowing dialogues. Trained on dialogue-focused data, it emphasizes conversational flow over isolated responses. While GPT models strive to address many tasks, LaMDA focuses on maintaining and enhancing conversational depth and breadth, mimicking the richness of human conversations.
+
+### Gopher
+
+Gopher, developed by DeepMind in 2021, is a 280 billion parameter **decoder-only** model. It can generate text, translate languages, write creatively, and answer questions informatively. Similar to GPT-3, it focused on improved dataset quality (MassiveText) and optimization techniques. Despite being trained on only 12% of its 10 terabyte dataset, filtering for quality significantly improved performance. Optimization included warmup learning rate, cosine decay, and adjusting learning rate and batch size with model size. Gopher outperformed previous state-of-the-art models on 81% of tasks, performing well on knowledge-intensive tasks but struggling with reasoning-heavy tasks. Ablation studies showed that increasing parameters significantly impacted logical reasoning and reading comprehension but plateaued on general knowledge.
+
+### GLaM
+
+GLaM (Generalist Language Model) was the first **sparsely-activated mixture-of-experts** language model. MoE models are more computationally efficient due to activating only a subset of parameters (experts) per input token. GLaM has 1.2 trillion parameters but uses only ⅓ of GPT-3's training energy and half the inference FLOPs while achieving better overall performance.
+
+### Chinchilla
+
+Until 2022, LLMs scaled primarily by increasing model size with relatively small datasets (up to 300 billion tokens) based on the Kaplan et al. study. However, the Chinchilla paper revisited compute-optimal scaling and found near-equal scaling in parameters and data to be optimal. To verify this, DeepMind trained a 70B parameter model (Chinchilla) with the same compute budget as the 280B Gopher. Chinchilla significantly outperformed Gopher, GPT-3, and Megatron-Turing NLG on various tasks, with a smaller memory footprint and inference cost. Chinchilla's findings shifted focus to scaling dataset size alongside parameter count, suggesting training data might soon be limited by available text. This led to research on scaling in data-constrained regimes.
+
+### PaLM
+
+Pathways Language Model (PaLM) is a 540-billion parameter transformer-based LLM from Google AI. Trained on a massive text and code dataset, it performs a wide range of tasks, including reasoning, arithmetic, joke explanation, code generation, and translation. It achieved state-of-the-art performance on many language benchmarks (e.g., GLUE, SuperGLUE). A key feature was its efficient scaling using Google's Pathways system to distribute training across TPU v4 Pods.
+
+### PaLM 2
+
+PaLM 2 is a successor to PaLM, announced in May 2023. With architectural and training enhancements, it's even more capable than PaLM with fewer total parameters, excelling at advanced reasoning tasks (code generation, math, question answering, translation, classification). PaLM 2 is more efficient than PaLM and became the basis for several commercial models in Google Cloud Generative AI.
+
+### Gemini
+
+Gemini is a state-of-the-art multimodal language family of models that can take interleaved sequences of text, image, audio, and video as input. Built on transformer decoders with architectural improvements for scale and optimized inference on TPUs, current versions support contexts up to 2M tokens (Gemini Pro on Vertex AI) and use multi-query attention for efficiency. Gemini models also employ a Mixture of Experts architecture. Trained on web documents, books, code, and image/audio/video data using Google's TPUv5e and TPUv4 processors, larger models are trained for compute-optimal tokens (like Chinchilla), while smaller models train on more tokens than optimal for better inference performance. The Gemini family includes Gemini Ultra (highly complex tasks, state-of-the-art on benchmarks), Gemini Pro (deployment at scale), Gemini Nano (on-device applications using distillation), and Gemini Flash (fastest, cost-efficient, 1M token context). Training across multiple modalities leads to strong capabilities in each domain. Gemini 1.5 Pro is a highly compute-efficient multimodal MoE model with a dramatically increased context window (millions of tokens), capable of recalling and reasoning over long documents and hours of video/audio, demonstrating remarkable capabilities in code understanding, language learning, multimodal reasoning, and video comprehension. It showed near-perfect recall in documents up to 1 million tokens and accurately followed complex instructions. Gemini 2.0 represents a significant leap forward with enhanced capabilities, efficiency, and new modalities, including Gemini 2.0 Flash (speed and efficiency, improved multimodal understanding), Gemini 2.0 Pro (highly capable for a broad range of tasks), Gemini 2.0 Nano (on-device deployment), and Gemini 2.0 Flash Thinking Experimental (fast reasoning with explainability for complex science and math).
+
+### Gemma
+
+Gemma is a family of lightweight, state-of-the-art **open models** built from the same research as Gemini. The first model has a large vocabulary (256k words) and was trained on a massive 6 trillion token dataset. The 2B parameter version can run efficiently on a single GPU. Gemma 2, a 27-billion parameter model, boasts performance comparable to larger models like Llama 3 70B on benchmarks, making it a powerful and accessible tool compatible with diverse tuning toolchains. Gemma 3 is the latest advancement, featuring multimodality (text and image input, text output), a large 128K context window, broad multilingual support (140+ languages), and various sizes (1B to 27B parameters) for diverse hardware needs.
+
+### Llama
+
+Llama models are transformer-based language models, primarily **decoder-only**, focusing on next token prediction. Meta released several versions. Llama 1 came in sizes from 7B to 65B parameters, notable for strong performance among open-source models. Llama 2 was a major advancement with a larger context window (4096 tokens), fine-tuned for chat, commercially usable, and offered in 7B, 13B, and 70B parameter versions with a larger training dataset and grouped-query attention. Llama 3 builds upon this with enhanced reasoning, coding, and general knowledge, increased safety, and a wider range of sizes, including multilingual and vision models (Llama 3.2) with a 128K token vocabulary and grouped-query attention, and quantized versions for on-device deployment.
+
+### Mixtral
+
+Developed by Mistral AI, Mixtral 8x7B is a **Sparse Mixture of Experts (SMoE)** model. While having 47B total parameters, it uses only 13B active parameters per token during inference, leading to faster inference and higher throughput. It excels in mathematics, code generation, and multilingual tasks, often outperforming LLaMA 2 70B, and supports a 32k token context length. Its instruction-tuned version, Mixtral 8x7B-Instruct, surpasses several closed-source models on human evaluations. Mistral makes several models open source under Apache 2.0 and offers others through its API.
+
+### OpenAI O1
+
+OpenAI’s new "o1" series focuses on complex reasoning through reinforcement learning, employing an internal "chain-of-thought" process for deliberation. These models show exceptional performance on scientific reasoning tasks, achieving high percentiles in programming competitions (Codeforces), top rankings in math Olympiad qualifiers (AIME), and surpassing PhD-level human accuracy on a physics, biology, and chemistry benchmark (GPQA). The API offers o1 (flagship model for difficult problems requiring broad knowledge) and o1-mini (faster, cost-effective, excelling in coding, math, and science where specialized knowledge is critical).
+
+### DeepSeek
+
+DeepSeek demonstrated competitive reasoning performance comparable to OpenAI’s "o1" through a novel reinforcement learning approach without extensive labeled data, exemplified by DeepSeek-R1-Zero trained purely with RL using Group Relative Policy Optimization (GRPO) instead of a critic model. While achieving high reasoning scores (matching "o1" on AIME 2024), initial outputs had poor readability. DeepSeek-R1 uses a multi-stage training process: supervised fine-tuning on a small dataset, pure-RL with GRPO, rejection sampling to create a high-quality synthetic dataset, and a final fine-tuning round combining synthetic and supervised data. This resulted in a model matching or exceeding o1 in many areas, with chain-of-thought reasoning intrinsically linked to its RL-based training. Despite providing model weights, DeepSeek's models are effectively closed-source due to a lack of transparency regarding training data.
+
+### Other Open Models
+
+The landscape of open LLMs is rapidly evolving. Examples include:
+
+- **Qwen 1.5** (Alibaba): LLM series in six sizes (0.5B to 72B) supporting 32k token context length, with Qwen 1.5-72B outperforming LLaMA2-70B on various benchmarks.
+- **Yi** (01.AI): 6B and 34B base models pre-trained on a massive English and Chinese dataset, with the 34B model comparable to GPT-3.5 on benchmarks and efficiently servable on consumer GPUs with quantization. Offers extensions like a 200k context model and a vision-language model.
+- **Grok 3** (xAI): Released in Grok 3 (Think) and Grok 3 mini (Think), trained using reinforcement learning, with Grok 3 (Think) having a 1 million token context window.
+
+Many other open models and commercial foundation model developers exist. It's crucial to confirm the license is appropriate for the intended use case.
+
+### Comparison
+
+Transformer-based language models have evolved from encoder-decoder architectures with hundreds of millions of parameters to massive decoder-only architectures with billions of parameters and trained on trillions of tokens. This scaling has improved performance and led to emergent behaviors, but limitations remain. Table 1 shows the evolution of important hyperparameters.
+
+## Fine-Tuning Large Language Models
+
+LLMs typically undergo multiple training stages. **Pre-training** is the foundational stage on large, diverse, unlabeled datasets to predict the next token, aiming to create a model good at sampling from a general data distribution. It's the most expensive stage. After pre-training, models show language understanding and generation skills tested through zero-shot or few-shot prompting. Models can be further specialized via **fine-tuning**, often called instruction-tuning or supervised fine-tuning (SFT). SFT involves training on task-specific demonstration datasets. Fine-tuning can improve instruction following, dialogue capabilities, and safety by mitigating bias and toxicity through careful data selection, human validation, and safety guardrails, including Reinforcement Learning with Human Feedback (RLHF). Fine-tuning is less costly and more data-efficient than pre-training. Numerous techniques exist to further optimize costs.
+
+### Supervised Fine-Tuning
+
+SFT improves an LLM's performance on specific tasks by further training it on domain-specific, labeled data, typically smaller and higher quality than pre-training data. Each data point consists of an input (prompt) and a demonstration (target response), such as questions and answers, translations, or documents and summaries. Fine-tuning can improve performance on specific tasks and also make the LLM safer, less toxic, more conversational, and better at following instructions.
+
+### Reinforcement Learning from Human Feedback
+
+Typically following SFT, RLHF is a powerful technique to better align LLMs with human-preferred responses (more helpful, truthful, safer). Unlike SFT (only positive examples), RLHF leverages negative outputs, penalizing undesired properties. An RLHF procedure usually involves training a **reward model (RM)** on human preference data (prompt-response pairs with scores or rankings). The preference signal can capture various aspects of a high-quality response (safety, helpfulness, fairness, truthfulness). Figure 8 shows a typical RLHF pipeline where an RM is trained and then used by an RL policy gradient algorithm to further fine-tune the SFT-ed LLM. To scale RLHF, **RL from AI Feedback (RLAIF)** uses AI feedback instead of human feedback. **Direct preference optimization (DPO)** can also remove the need for training RLHF. Both RLHF and RLAIF can be used on Google Cloud.
+
+### Parameter Efficient Fine-Tuning
+
+SFT and RLHF can be very costly, especially for full fine-tuning of large LLMs. **Parameter Efficient Fine-Tuning (PEFT)** techniques make fine-tuning significantly cheaper and faster. PEFT approaches append a much smaller set of weights to "perturb" the pre-trained LLM weights, effectively fine-tuning for new tasks while training far fewer parameters. Common PEFT techniques include:
+
+- **Adapter-Based Fine-Tuning**: Uses small modules (adapters) added to the pre-trained model, and only adapter parameters are trained.
+- **Low-Rank Adaptation (LoRA)**: Approximates weight matrix updates using two smaller matrices, freezing original weights and training these update matrices, reducing resource requirements with minimal added inference latency. QLoRA uses quantized weights for even greater efficiency. LoRA modules are plug-and-play, allowing easy replacement for different tasks and easier model transfer (only update matrices needed).
+- **Soft Prompting**: Conditions frozen LLMs with learnable vectors (soft prompts) instead of hand-crafted text. These optimized vectors can be as few as five tokens, making it parameter-efficient and enabling mixed-task inference.
+
+Full fine-tuning is generally most performant, followed by LoRA and soft prompting, but cost order is reversed. All three PEFT approaches are more memory-efficient than traditional fine-tuning and achieve comparable performance. Snippet 1 shows an example of SFT fine-tuning on Google Cloud.
+
+## Using Large Language Models
+
+**Prompt engineering** and **sampling techniques** strongly influence LLM performance. Prompt engineering is designing and refining text inputs (prompts) to achieve desired outputs. Sampling techniques determine how output tokens are chosen, affecting correctness, creativity, and diversity.
+
+### Prompt Engineering
+
+Guiding an LLM with prompts is critical to unleashing its full potential, including grounding for factual responses or encouraging creativity. Examples include clear instructions, examples, keywords, formatting, and background details. Common terms include:
+
+- **Few-Shot Prompting**: Providing a task description and a few carefully chosen examples to guide the LLM's response.
+- **Zero-Shot Prompting**: Providing a direct prompt with instructions, relying on the LLM's existing knowledge without additional data or examples.
+- **Chain-of-Thought Prompting**: Demonstrating how to solve similar problems step-by-step to improve performance on complex reasoning tasks.
+
+Prompt engineering is an active research area.
+
+### Sampling Techniques and Parameters
+
+Various sampling techniques control how the next token is chosen, essential for output quality, creativity, and diversity.
+
+- **Greedy Search**: Selects the highest probability token at each step, simple but can lead to repetitive outputs.
+- **Random Sampling**: Selects the next token according to the probability distribution, can be more creative but also more nonsensical.
+- **Temperature Sampling**: Adjusts the probability distribution; higher temperatures increase diversity, lower favor high-probability tokens.
+- **Top-K Sampling**: Randomly samples from the top K most probable tokens, K controls randomness.
+- **Top-P Sampling (Nucleus Sampling)**: Samples from a dynamic subset of tokens whose cumulative probability adds up to P, adapting the number of candidates based on confidence.
+- **Best-of-N Sampling**: Generates N responses and selects the best according to a predetermined metric (e.g., reward model, consistency check), useful for short snippets or logic-heavy situations.
+
+Combining prompt engineering with sampling and calibrated hyperparameters can greatly influence the LLM's response.
+
+### Task-Based Evaluation
+
+Moving LLM applications from MVP to production requires a tailored evaluation framework to validate functionality and user experience. Application builders need to provide their own evaluation data, development context, and a definition of good performance.
+
+- **Evaluation Data**: Dedicated datasets mirroring production traffic are needed, starting with manually curated sets and enriching them with real user interactions and synthetic data.
+- **Development Context**: Evaluation should analyze the entire system, including data augmentation (RAG) and agentic workflows.
+- **Definition of "Good"**: Move beyond matching a single "correct" answer to dataset-level criteria or rubrics reflecting desired business outcomes.
+
+Three methods to evaluate LLM performance:
+
+- **Traditional Evaluation Methods**: Quantitative metrics comparing model outputs to ideal responses, aiming for objectivity but potentially penalizing creative outputs.
+- **Human Evaluation**: The gold standard, providing nuanced assessment of complex generative outputs.
+- **LLM-Powered Autoraters**: Scalable and efficient evaluations mimicking human judgment, operating with or without reference data, using tasks, criteria, and candidate responses (with optional references) to generate and parse LLM output. Autoraters can provide rationales but require calibration through meta-evaluation (comparing to human judgments). Approaches are emerging to leverage rubrics and multi-step processes for interpretable evaluation metrics, breaking down examples into subtasks and aggregating results.
+
+## Accelerating Inference
+
+Increasing LLM size has improved quality but also increased computational resources needed for inference. Optimizing inference performance for large-scale, low-latency use cases is a priority. Many high-yielding optimization methods involve **trade-offs** between factors like quality, latency, and cost. Trading off doesn't completely sacrifice a factor but accepts marginal degradation for substantial improvement in another.
+
+### Trade-Offs
+
+- **The Quality vs Latency/Cost Tradeoff**: Speed and cost can be significantly improved by accepting marginal drops in accuracy, such as using a smaller model or **quantization** (decreasing parameter precision). It's important to consider the model's practical capability for the specific task; reduced capacity or precision doesn't automatically mean less capability.
+- **The Latency vs Cost Tradeoff**: Also known as the latency vs throughput tradeoff, where better throughput on the same hardware reduces cost. Many opportunities exist to trade off latency against cost, important for tailoring LLM performance to the use case. Bulk inference can prioritize cost over latency, while chatbots prioritize latency. Gemini 2.0 Flash Thinking offers a strong balance of quality and affordability.
+
+### Output-Approximating Methods
+
+These methods can impact the model's output.
+
+- **Quantization**: Decreases the numerical precision of model weights and activations (usually from 32-bit floating-point to 8 or 4-bit integers). This reduces memory footprint, communication overhead, and can enable faster arithmetic operations on accelerators. The impact on quality can be mild or non-existent, allowing for a quality vs latency/cost trade-off. Quantization can be inference-only or incorporated into training (**Quantization Aware Training QAT**) for more resilience. The quantization strategy and granularity are tweaked for the best cost/quality trade-off.
+- **Distillation**: Transfers knowledge from a larger "teacher" model to a smaller "student" model for efficiency. **Data distillation (model compression)** uses the teacher to generate more synthetic data to train the student, improving quality compared to only using original data. Synthetic data quality is crucial. **Knowledge distillation** aligns the output token distribution of the student to the teacher, more sample-efficient than data distillation. **On-policy distillation** uses feedback from the teacher on each sequence generated by the student in a reinforcement learning setup. Figure 9 illustrates model performance as a function of training dataset size.
+
+### Output-Preserving Methods
+
+These methods guarantee no changes to model output.
+
+- **Flash Attention**: Optimizes the self-attention calculation (quadratic in input length) by making it IO Aware, minimizing data movement between slow HBM and faster memory tiers in TPUs/GPUs. It changes the order of operations and fuses layers for efficient fast memory utilization. Flash Attention is an exact algorithm, maintaining numerical output and yielding significant latency benefits (2-4X in attention computation) by reducing IO overhead.
+- **Prefix Caching**: Caches the attention key and value scores (KV Cache) of the input (prefill operation) between subsequent inference requests to reduce latency and cost. The self-attention mechanism allows reusing KV caches because tokens only attend to preceding tokens. If new input is appended to previous input, recalculating prefill for the older input can be avoided. Figure 10 illustrates prefix caching in a chat scenario. Prefix caches can be stored in memory or on disk. Maintaining a prefix-caching-friendly input structure is important. LLM chatbots and large document/code uploads naturally lend themselves to prefix caching. Prefix caching is available as Context Caching on Google AI Studio and Vertex AI.
+- **Speculative Decoding**: Addresses the memory-bound decode phase (token-by-token) by using a smaller "drafter" model to quickly predict multiple future tokens ahead of the main model. The main model then verifies these hypotheses in parallel, and the accepted hypothesis with the maximum tokens is selected. Figure 11 illustrates speculative decoding. This technique is quality neutral as the main model rejects any tokens it wouldn't have predicted. It improves decode latency as only one main model step is on the critical path due to parallelization. Effective speculative decoding requires good alignment between the drafter and main models.
+
+### Batching and Parallelization
+
+Similar to other software systems, throughput and latency can be improved by batching less compute-intensive operations and parallelizing more intensive parts. Batching is most useful on the decode side (not compute-bound), allowing simultaneous processing of multiple requests while respecting memory limits. Parallelization is widely used in transformers through techniques like sequence parallelism, pipeline parallelism, and tensor parallelism across multiple hardware instances. An important consideration is the cost of communication and synchronization between distributed shards. Selecting the right parallelism strategy balances compute needs and communication costs for latency gains.
+
+## Applications
+
+Large language models are revolutionizing information interaction and processing, transforming applications in text, code, images, audio, and video. Snippet 3 shows code examples for generating text responses using the Gemini model via Google Cloud Vertex AI SDK and AI Studio. Multimodal aspects of Gemini are covered in dedicated whitepapers.
+
+### Code and Mathematics
+
+Generative models can comprehend and generate code and algorithms, assisting developers in code generation, completion, refactoring, debugging, translation, test case generation, documentation, and understanding. Recent advancements include AlphaCode 2 for competitive coding (ranking in the top 15%), FunSearch for mathematical discoveries (cap set problem) and efficient algorithms, and AlphaGeometry for solving complex geometric theorems (matching human gold medalists).
+
+### Machine Translation
+
+LLMs can generate fluid, high-quality, and contextually accurate translations due to their deep linguistic understanding. Use cases include instant messaging apps for natural on-the-fly translations, e-commerce platforms like AliExpress for nuanced product description translations, and travel apps like Google Translate for smoother real-time spoken translations.
+
+### Text Summarization
+
+A core capability of many LLMs with use cases in news aggregators (crafting summaries capturing events and sentiment), research databases (generating abstracts of scientific papers), and chat management platforms like Google Chat (generating thread summaries aiding prioritization).
+
+### Question-Answering
+
+LLMs go beyond keyword matching to deeply understand context, infer user intent, and provide contextually rich and precise answers. Examples include virtual assistants offering detailed weather explanations, customer support bots providing personalized assistance based on history, and academic platforms like Wolfram Alpha catering to diverse user levels. The quality of answers and citations can be improved using Retrieval-Augmented Generation (RAG) and advanced prompting techniques.
+
+### Chatbots
+
+LLMs transform chatbots by offering dynamic, human-like interactions that analyze sentiment and context. Use cases include customer service on retail platforms like Zara offering product advice and entertainment on media platforms engaging with users dynamically and moderating chats contextually.
+
+### Content Generation
+
+LLMs have an unprecedented ability to generate human-like text that is contextually relevant and detailed across various styles and complexities. Real-world examples include platforms using LLMs to help marketers develop targeted advertisements and potentially assisting writers with movie or TV scripts by suggesting dialogues and scene descriptions. Sampling methods and parameters should be tuned based on the desired balance of correctness and creativity.
+
+### Natural Language Inference
+
+NLI, determining if a hypothesis can be logically inferred from a premise, is excelled at by LLMs due to their semantic and contextual understanding. Use cases include businesses using LLMs for nuanced sentiment analysis from product reviews, law firms employing them to infer implications in legal documents, and medical fields analyzing patient data to infer potential diagnoses.
+
+### Text Classification
+
+Categorizing text into predefined groups with higher precision due to deep contextual understanding. Examples include email services using LLMs for more accurate spam detection, news platforms categorizing articles with subtle distinctions, and businesses sorting customer feedback into specific areas. LLMs can also be used as autoraters to evaluate the generated outputs of other LLMs.
+
+### Text Analysis
+
+LLMs excel at deep text analysis, extracting patterns and insights from vast textual datasets. Potential examples include market research companies analyzing consumer conversations on social media and academics employing LLMs for literary analysis.
+
+### Multimodal Applications
+
+Multimodal LLMs process and generate text, images, audio, and video, opening new AI frontiers. Examples include creative content generation (storytelling from images/videos, targeted advertising), education and accessibility (personalized learning, assistive technology describing visuals/audio), business and industry (document understanding, multimodal customer service), and science and research (medical diagnosis from scans and reports, bioinformatics integrating diverse data). These applications are expected to grow, benefiting from unimodal LLM methodologies. LLMs are reshaping how we interact with and analyze text across sectors.
+
+## Summary
+
+This whitepaper discussed the basics of transformers, the foundation of modern LLMs, and detailed the evolution of various architectures and components. It covered methodologies for efficient and effective training and fine-tuning, briefly discussed prompt engineering and sampling techniques, and touched on possible applications. Key takeaways include:
+
+- The transformer architecture and both model parameters and dataset composition are crucial.
+- The order and strategies for fine-tuning (Instruction Tuning, Safety Tuning, SFT, RLHF/RLAIF) are important for capturing task essence and shifting the distribution.
+- Efficient inference is an active research area with many methods to reduce serving costs and latency, some guaranteeing identical outputs.
+- LLMs have diverse applications (summarization, translation, question answering, chat, code generation). Users can create custom tasks using Vertex and Makersuite text generation services. Experimenting with prompt engineering is important as LLMs are sensitive to prompts.
+- Tweaking sampling technique parameters (Top-K, Top-P, Max decoding steps) can enhance task-specific performance, creativity, and diversity.
+
+---
+
+**Note:** The table of contents and the detailed sections provide a comprehensive overview of large language models, their evolution, applications, and optimization techniques. This document serves as a detailed guide for understanding and implementing LLMs
